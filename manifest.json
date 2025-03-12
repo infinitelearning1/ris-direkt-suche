@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "RIS-Direkt-Suche",
+  "version": "1.9",
+  "description": "Extrahiert automatisch den relevanten Suchbegriff (Gerichtszahl, Gesetzesstelle, Fundstelle, RIS‑Justiz Satz oder OGH‑Urteil) aus einem gemischten Eingabestring und leitet bei einem Ergebnis direkt zum Dokument weiter.",
+  "permissions": [
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*.ris.bka.gv.at/*",
+    "*://www.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.ris.bka.gv.at/Ergebnis.wxe*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {},
+  "omnibox": { "keyword": "ris" }
+}
