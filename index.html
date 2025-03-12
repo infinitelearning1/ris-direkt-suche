@@ -106,8 +106,8 @@
     <section>
       <h2>Über die Erweiterung</h2>
       <p>
-        RIS‑Direkt‑Suche ist eine praktische Chrome Erweiterung, mit der Sie über die Browserleiste schnell und einfach OGH-Urteile, Gesetzesstellen, RIS‑Justiz-Rechtssätze oder Fundstellen aufrufen können. Je nach erkanntem Typ werden Sie direkt zum entsprechenden Ergebnis auf der <a href="https://ris.bka.gv.at" target="_blank">RIS-Webseite</a> weitergeleitet.
-        Falls die Erweiterung das Format nicht erkennt, erfolgt als Fallback eine Google-Suche.
+        RIS‑Direkt‑Suche ist eine praktische Chrome Erweiterung, mit der Sie über die Browserleiste schnell und einfach OGH-Urteile, Gesetzesstellen, RIS‑Justiz-Rechtssätze oder Entscheidungsfundstellen des RIS aufrufen können. Wird die Eingabe erkannt, werden Sie direkt zum entsprechenden Ergebnis auf der <a href="https://ris.bka.gv.at" target="_blank">RIS-Webseite</a> weitergeleitet.
+        Falls die Erweiterung die Eingabe nicht erkennt, erfolgt als Fallback eine Google-Suche.
       </p>
     </section>
     
@@ -115,6 +115,7 @@
       <h2>Installation</h2>
       <p>Folgen Sie diesen Schritten, um die Erweiterung in Google Chrome zu installieren:</p>
       <ol>
+        <li>Leider ist die Erweiterung noch nicht im Google Chrome Store verfügbar; sie muss daher manuell installiert werden.</li>
         <li>Laden Sie die folgenden Dateien herunter:
           <ul>
             <li><a href="#" onclick="forceDownload('https://raw.githubusercontent.com/infinitelearning1/ris-direkt-suche/main/manifest.json', 'manifest.json')">manifest.json</a></li>
@@ -122,7 +123,7 @@
             <li><a href="#" onclick="forceDownload('https://raw.githubusercontent.com/infinitelearning1/ris-direkt-suche/main/content.js', 'content.js')">content.js</a></li>
           </ul>
         </li>
-        <li>Erstellen Sie einen Ordner und kopieren Sie alle heruntergeladenen Dateien in diesen Ordner.</li>
+        <li>Erstellen Sie einen Ordner und kopieren Sie die heruntergeladenen Dateien in diesen Ordner.</li>
         <li>Öffnen Sie Google Chrome und gehen Sie zu <code>chrome://extensions/</code>.</li>
         <li>Aktivieren Sie den Entwicklermodus (oben rechts).</li>
         <li>Klicken Sie auf <strong>"Entpackte Erweiterung laden"</strong> (oben links) und wählen Sie den erstellten Ordner aus.</li>
@@ -133,16 +134,16 @@
     <section>
       <h2>Funktionalität</h2>
       <p>
-        Geben Sie in der Chrome-Adresszeile das Schlüsselwort <code>ris</code> gefolgt von einem Leerzeichen und dem Suchbegriff (etwa <code>§ 21 IO, 5 Ob 124/98x</code>) ein.
-        Die Extension analysiert den Eingabestring, erkennt den Typ des Suchbegriffs und leitet Sie automatisch zum entsprechenden Dokument auf der RIS-Webseite weiter.
-        So können Sie schnell und präzise OGH-Entscheidungen, Fundstellen, RIS-Justiz-Rechtssätze und Gesetzesstellen finden.
+        Geben Sie in der Chrome-Adresszeile das Schlüsselwort <code>ris</code> gefolgt von einem Leerzeichen und dem Suchbegriff (etwa <code>§ 21 IO, 10 Ob 15/23p</code>) ein. Das Paragraphenzeichen kann weggelassen werden; ebenso genügt die GZ der OGH-Entscheidung.
+        Die Extension analysiert die Eingabe, erkennt den Typ des Suchbegriffs, erstellt daraus einen aufrufbaren Link zum RIS und leitet Sie automatisch zum entsprechenden Dokument auf der RIS-Webseite weiter.
+        So können Sie schnell und präzise OGH-Entscheidungen, Gesetzesstellen, RIS-Justiz-Rechtssätze und Entscheidungsfundstellen im RIS finden.
       </p>
     </section>
 
     <section>
       <h2>Feedback</h2>
       <p>
-        Für Feedback oder Problemen gerne eine E-Mail an: 
+        Für Feedback oder bei Problemen gerne eine E-Mail an: 
         <a href="mailto:ris.suche5@gmail.com">ris.suche5(at)gmail.com</a>.
       </p>
       <p>
