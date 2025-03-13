@@ -1,5 +1,3 @@
-// background.js
-
 // Liste der Abkürzungen für Fundstellen
 const abbreviations = [
   "AFS", "ALJ", "AnwBl", "AR", "ASoK", "AVR", "bau aktuell", "bbl", "BFGjournal", "BRZ", "DAG", "Dako",
@@ -46,7 +44,6 @@ const rsJustizRegex = /^(?:RIS[-‑]?Justiz\s*)?(RS\d{7})\s*$/i;
 // OGH‑Urteile:
 // Erlaubt optional einen Datumsvorbau (z. B. "03.02.2025"), optional den "OGH"-Prefix
 // und extrahiert als Gruppe 1 ausschließlich den relevanten GZ, z. B. "6 Ob 162/05z".
-// Zwischenräume zwischen den Teilen der GZ sind optional (sodass auch "6Ob146/04w" erkannt wird).
 const oghRegex = /^(?:\d{1,2}[.\-/]\d{1,2}[.\-/]\d{2,4}\s+)?(?:OGH\s+)?(\d+\s*Ob(?:A)?\s*\d+\/\d+[a-z]?)(?:\s+(?:ecolex|ZAK|Z))?\s*$/i;
 
 /**
@@ -115,7 +112,6 @@ function extractQuery(input) {
   return null;
 }
 
-
 // Berechne ein Datum 30 Jahre in der Zukunft für den Parameter "BisDatum"
 var currentDate = new Date();
 var futureDate = new Date(currentDate);
@@ -124,7 +120,6 @@ var day = ('0' + futureDate.getDate()).slice(-2);
 var month = ('0' + (futureDate.getMonth() + 1)).slice(-2);
 var yearFuture = futureDate.getFullYear();
 var formattedDate = day + "." + month + "." + yearFuture;
-
 
 chrome.omnibox.onInputEntered.addListener(function(text) {
   // Versuche, aus dem gesamten Eingabestring den relevanten Suchbegriff zu extrahieren
@@ -143,7 +138,7 @@ chrome.omnibox.onInputEntered.addListener(function(text) {
                 "&BisDatum=" + encodeURIComponent(formattedDate) +
                 "&Norm=&ImRisSeitVonDatum=&ImRisSeitBisDatum=&ImRisSeit=Undefined" +
                 "&ResultPageSize=100&Suchworte=" + encodeURIComponent(rsCode) +
-                "&Position=1&SkipToDocumentPage=true";
+                "&Position=1&SkipToDocumentPage=true&extensionTriggered=true";
       chrome.tabs.update({ url: url });
       
     } else if (extracted.type === 'ogh') {
@@ -154,7 +149,7 @@ chrome.omnibox.onInputEntered.addListener(function(text) {
                 "&SucheNachRechtssatz=False&SucheNachText=True&GZ=" + encodeURIComponent(formattedText) +
                 "&VonDatum=&BisDatum=&Norm=&ImRisSeitVonDatum=&ImRisSeitBisDatum=&ImRisSeit=Undefined" +
                 "&ResultPageSize=100&Suchworte=&Dokumentnummer=&kundmachungsorgan=&ImRisSeit=Undefined" +
-                "&SkipToDocumentPage=true";
+                "&SkipToDocumentPage=true&extensionTriggered=true";
       chrome.tabs.update({ url: url });
       
     } else if (extracted.type === 'gerichtszahl') {
@@ -165,7 +160,7 @@ chrome.omnibox.onInputEntered.addListener(function(text) {
                 "&SucheNachRechtssatz=False&SucheNachText=True&GZ=" + encodeURIComponent(formattedText) +
                 "&VonDatum=&BisDatum=&Norm=&ImRisSeitVonDatum=&ImRisSeitBisDatum=&ImRisSeit=Undefined" +
                 "&ResultPageSize=100&Suchworte=&Dokumentnummer=&kundmachungsorgan=&ImRisSeit=Undefined" +
-                "&SkipToDocumentPage=true";
+                "&SkipToDocumentPage=true&extensionTriggered=true";
       chrome.tabs.update({ url: url });
       
     } else if (extracted.type === 'fundstelle') {
@@ -206,7 +201,7 @@ chrome.omnibox.onInputEntered.addListener(function(text) {
                 "&Spruch=&Rechtsgebiet=Undefined&AenderungenSeit=Undefined&JustizEntscheidungsart=" +
                 "&SucheNachRechtssatz=False&SucheNachText=True&GZ=&VonDatum=&BisDatum=" + encodeURIComponent(formattedDate) +
                 "&Norm=&ImRisSeitVonDatum=&ImRisSeitBisDatum=&ImRisSeit=Undefined" +
-                "&ResultPageSize=100&Suchworte=&Position=1&SkipToDocumentPage=true";
+                "&ResultPageSize=100&Suchworte=&Position=1&SkipToDocumentPage=true&extensionTriggered=true";
       chrome.tabs.update({ url: url });
       
     } else if (extracted.type === 'lawProvision') {
@@ -246,7 +241,7 @@ chrome.omnibox.onInputEntered.addListener(function(text) {
         url += "&Suchworte=" + encodeURIComponent(suchworte);
       }
       
-      url += "&Position=1&SkipToDocumentPage=true";
+      url += "&Position=1&SkipToDocumentPage=true&extensionTriggered=true";
       chrome.tabs.update({ url: url });
     }
   } else {
