@@ -1,3 +1,4 @@
+// File: v3/content.js
 function checkAndRedirect() {
   const urlParams = new URLSearchParams(window.location.search);
   // Nur weiterleiten, wenn der Request von der Extension stammt

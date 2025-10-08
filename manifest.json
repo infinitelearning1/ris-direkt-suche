@@ -1,7 +1,8 @@
+
 {
   "manifest_version": 3,
   "name": "RIS-Direkt-Suche",
-  "version": "1.9",
+  "version": "1.10",
   "description": "Extrahiert automatisch den relevanten Suchbegriff (Gerichtszahl, Gesetzesstelle, Fundstelle, RIS‑Justiz Satz oder OGH‑Urteil) aus einem gemischten Eingabestring und leitet bei einem Ergebnis direkt zum Dokument weiter.",
   "permissions": [
     "tabs"
