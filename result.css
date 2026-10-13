@@ -1,0 +1,2 @@
+/* Only extension searches awaiting a checked single-result redirect. */
+html[data-ris-resolving] body { opacity: 0 !important; pointer-events: none !important; }

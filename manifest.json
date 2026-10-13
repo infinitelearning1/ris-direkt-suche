@@ -1,25 +1,115 @@
-
 {
   "manifest_version": 3,
-  "name": "RIS-Direkt-Suche",
-  "version": "1.10",
-  "description": "Extrahiert automatisch den relevanten Suchbegriff (Gerichtszahl, Gesetzesstelle, Fundstelle, RIS‑Justiz Satz oder OGH‑Urteil) aus einem gemischten Eingabestring und leitet bei einem Ergebnis direkt zum Dokument weiter.",
+  "minimum_chrome_version": "119",
+  "name": "RIS",
+  "short_name": "RIS",
+  "version": "1.13",
+  "description": "RIS-Suche für OGH, VwGH, VfGH und historische Normen. Einstellbare Zitatmarkierung auf Webseiten und in geöffneten PDFs mit Textebene.",
   "permissions": [
-    "tabs"
+    "contextMenus",
+    "storage",
+    "activeTab",
+    "offscreen",
+    "webNavigation",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
-    "*://*.ris.bka.gv.at/*",
-    "*://www.google.com/*"
+    "https://*.ris.bka.gv.at/*",
+    "https://data.bka.gv.at/ris/api/v2.6/*",
+    "file:///*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.ris.bka.gv.at/Ergebnis.wxe*"],
-      "js": ["content.js"]
+      "matches": [
+        "http://*/*",
+        "https://*/*",
+        "file:///*"
+      ],
+      "js": [
+        "settings.js",
+        "pdf-entry.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.ris.bka.gv.at/Ergebnis.wxe*"
+      ],
+      "js": [
+        "years.js",
+        "content.js"
+      ],
+      "css": [
+        "result.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*",
+        "file:///*"
+      ],
+      "exclude_matches": [
+        "*://*.ris.bka.gv.at/Ergebnis.wxe*"
+      ],
+      "js": [
+        "data.js",
+        "norms.js",
+        "collections.js",
+        "query.js",
+        "settings.js",
+        "pdf-layout.js",
+        "highlight.js"
+      ],
+      "css": [
+        "highlight.css"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true,
+      "match_origin_as_fallback": true
     }
   ],
-  "action": {},
-  "omnibox": { "keyword": "ris" }
+  "action": {
+    "default_title": "RIS: Einstellungen",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "omnibox": {
+    "keyword": "ris"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "128": "icon128.png",
+    "32": "icon32.png",
+    "48": "icon48.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pdf-processor.html",
+        "native.pdf",
+        "pdf-link.html",
+        "pdf-follow.html",
+        "pdf-follow.js",
+        "pdf-view.html"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*",
+        "file:///*"
+      ]
+    }
+  ]
 }

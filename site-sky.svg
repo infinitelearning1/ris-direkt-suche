@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" preserveAspectRatio="xMidYMid slice">
+      <filter id="paint" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0014 0.0042" numOctaves="4" seed="23" result="big"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.008 0.045" numOctaves="2" seed="4" result="brush"/>
+        <feDisplacementMap in="big" in2="brush" scale="80" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="1.6"/>
+        <feColorMatrix type="matrix" values="2.4 0 0 0 -0.7  2.4 0 0 0 -0.7  2.4 0 0 0 -0.7  0 0 0 0 1"/>
+        <feComponentTransfer>
+          <feFuncR type="table" tableValues=".56 .68 .80 .90 .96 .97"/>
+          <feFuncG type="table" tableValues=".67 .77 .86 .92 .95 .92"/>
+          <feFuncB type="table" tableValues=".84 .90 .94 .96 .94 .86"/>
+        </feComponentTransfer>
+      </filter>
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 .2  0 0 0 0 .22  0 0 0 0 .3  0 0 0 .45 0"/></filter>
+      <rect x="-200" y="-200" width="1600" height="1900" filter="url(#paint)"/>
+      <rect width="1200" height="1500" filter="url(#grain)" opacity=".14"/>
+    </svg>

@@ -1,0 +1,74 @@
+/* MV3 virtual PDF responses and tab routing. PDF bytes live only offscreen. */
+(function(){
+ 'use strict';
+ if(!chrome.offscreen||typeof globalThis.addEventListener!=='function')return;
+ const prefix='risPdf:',valid=id=>/^[a-f0-9]{32}$/.test(id||''),url=path=>chrome.runtime.getURL(path),refreshQueues=new Map();let creating;
+ const fresh=()=>[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join('');
+ const drawKey=s=>JSON.stringify([s.style,s.normColor,s.caseColor,s.rsColor,s.fundstelleColor,s.highlightColor,s.enabledCourts,s.markFundstellen,s.markCollections]);
+ const enabled=(s,meta)=>['both','pdf'].includes(s.mode)&&!s.excludedSites.some(host=>meta.sourceHost===host||meta.sourceHost.endsWith('.'+host));
+ const native=(id,original=false)=>url('native.pdf')+'?id='+id+(original?'&original=1':'');
+ const view=(id,original=false)=>url('pdf-view.html')+'?id='+id+(original?'&original=1':'');
+ const isView=(value,id)=>{try{const u=new URL(value);return u.origin===new URL(url('')).origin&&['/native.pdf','/pdf-view.html'].includes(u.pathname)&&u.searchParams.get('id')===id;}catch{return false;}};
+ const get=async id=>(await chrome.storage.session.get(prefix+id))[prefix+id];
+ const set=meta=>chrome.storage.session.set({[prefix+meta.id]:meta});
+ async function ensure(){const target=url('pdf-offscreen.html');if(!(await chrome.runtime.getContexts({contextTypes:['OFFSCREEN_DOCUMENT'],documentUrls:[target]})).length){if(!creating)creating=chrome.offscreen.createDocument({url:'pdf-offscreen.html',reasons:['BLOBS'],justification:'Die geöffnete PDF vorübergehend im Arbeitsspeicher für den normalen PDF-Viewer bereitstellen.'}).finally(()=>creating=null);await creating;}await self.clients.claim();}
+ async function cache(message,timeout=15000){await ensure();for(let i=0;i<60;i++){const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true}),client=clients.find(c=>c.url===url('pdf-offscreen.html'));if(client)return new Promise((resolve,reject)=>{const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();reject(Error('Die temporäre PDF ist nicht erreichbar.'));},timeout);channel.port1.onmessage=e=>{clearTimeout(timer);channel.port1.close();e.data.error?reject(Error(e.data.error)):resolve(e.data);};client.postMessage({target:'ris-pdf-cache',...message},[channel.port2]);});await new Promise(r=>setTimeout(r,25));}throw Error('Die temporäre PDF ist nicht verfügbar.');}
+ async function release(id){const meta=await get(id);if(!meta)return;await chrome.storage.session.remove(prefix+id);if(meta.ruleId)await chrome.declarativeNetRequest.updateSessionRules({removeRuleIds:[meta.ruleId]}).catch(()=>{});if((await chrome.runtime.getContexts({contextTypes:['OFFSCREEN_DOCUMENT']})).length)await cache({type:'release',id}).catch(()=>{});}
+ async function rule(meta){const existing=await chrome.declarativeNetRequest.getSessionRules();let id;do{id=(crypto.getRandomValues(new Uint32Array(1))[0]&0x7fffffff)||1;}while(existing.some(r=>r.id===id));await chrome.declarativeNetRequest.updateSessionRules({addRules:[{id,priority:1,condition:{regexFilter:'^https://([a-zA-Z0-9-]+\\.)?ris\\.bka\\.gv\\.at/.*[?&]risPdfNav='+meta.id+'&risPdfRef=([0-9]+)&risPdfPage=([0-9]+)$',resourceTypes:['main_frame','sub_frame']},action:{type:'redirect',redirect:{regexSubstitution:url('pdf-follow.html')+'?id='+meta.id+'&ref=\\2&page=\\3'}}}]});meta.ruleId=id;}
+ function destination(ref){if(ref.year){const target=new URL(url('year.html'));target.searchParams.set('ref',JSON.stringify(ref));return target.href;}return RIS.buildUrl(ref);}
+ const noContent=()=>new Response(null,{status:204,headers:{'Content-Type':'text/html; charset=utf-8','Content-Disposition':'inline','Cache-Control':'no-store'}});
+ // Native middle-clicks can create a tab before a document exists in it.
+ // Route that tab through the navigation event; no script/bridge needs to load.
+ chrome.webNavigation.onBeforeNavigate.addListener(details=>{
+  (async()=>{const target=new URL(details.url);if(target.protocol!=='https:'||!/(^|\.)ris\.bka\.gv\.at$/i.test(target.hostname))return;const id=target.searchParams.get('risPdfNav'),raw=target.searchParams.get('risPdfRef'),page=Number(target.searchParams.get('risPdfPage')),meta=valid(id)&&await get(id);if(!meta||details.tabId===meta.tabId||!/^\d+$/.test(raw||'')||!Number.isSafeInteger(page)||page<1||page>meta.pages)return;const {ref}=await cache({type:'reference',id,index:Number(raw)});if(ref)await chrome.tabs.update(details.tabId,{url:destination(ref),active:true});})().catch(()=>{});
+ },{url:[{hostSuffix:'ris.bka.gv.at'}]});
+ chrome.webNavigation.onCommitted.addListener(details=>{
+  if(details.frameId!==0)return;
+  (async()=>{const current=new URL(details.url);for(const[key,meta]of Object.entries(await chrome.storage.session.get())){if(!key.startsWith(prefix)||meta.tabId!==details.tabId)continue;const source=new URL(meta.sourceURL);if(isView(current.href,meta.id)||current.origin===source.origin&&current.pathname===source.pathname&&current.search===source.search)continue;await release(meta.id);}})().catch(()=>{});
+ });
+ async function follow(requested,event){
+  const id=requested.searchParams.get('id'),rawIndex=requested.searchParams.get('ref'),rawPage=requested.searchParams.get('page'),index=Number(rawIndex),page=Number(rawPage),meta=valid(id)&&await get(id);
+  if(!meta||!/^\d+$/.test(rawIndex||'')||!/^\d+$/.test(rawPage||'')||!Number.isSafeInteger(index)||!Number.isSafeInteger(page)||page<1||page>meta.pages)throw Error('Diese temporäre PDF ist nicht mehr verfügbar.');
+  const {ref}=await cache({type:'reference',id,index});if(!ref)throw Error('Unbekannte Fundstelle.');const clean=destination(ref);
+  const client=event.clientId&&await self.clients.get(event.clientId);
+  // A new tab has no previous PDF client: let its navigation follow the clean
+  // target. Normal clicks return 204, which preserves the existing PDF viewer.
+  if(!isView(client?.url,id))return noContent();
+  const tab=await chrome.tabs.get(meta.tabId);await chrome.tabs.create({url:clean,active:true,index:tab.index+1,windowId:tab.windowId,openerTabId:tab.id});
+  meta.page=page;await set(meta);
+  return noContent();
+ }
+ async function route(message,sender){if(![url('pdf-link.html'),url('pdf-follow.html')].includes(sender.url?.split(/[?#]/)[0])||!sender.tab)throw Error('Ungültige PDF-Weitergabe.');const target=new URL(message.url);if(target.protocol!=='https:'||!/(^|\.)ris\.bka\.gv\.at$/i.test(target.hostname))throw Error('Ungültiges RIS-Ziel.');const id=target.searchParams.get('risPdfNav'),rawIndex=target.searchParams.get('risPdfRef'),rawPage=target.searchParams.get('risPdfPage'),index=Number(rawIndex),page=Number(rawPage),meta=valid(id)&&await get(id);if(!meta||!/^\d+$/.test(rawIndex||'')||!/^\d+$/.test(rawPage||'')||!Number.isSafeInteger(index)||!Number.isSafeInteger(page)||page<1||page>meta.pages)throw Error('Diese temporäre PDF ist nicht mehr verfügbar.');const {ref}=await cache({type:'reference',id,index});if(!ref)throw Error('Unbekannte Fundstelle.');const clean=destination(ref);if(sender.tab.id!==meta.tabId)return{url:clean};const tab=sender.tab;await chrome.tabs.create({url:clean,active:true,index:tab.index+1,windowId:tab.windowId,openerTabId:tab.id});meta.page=page;await set(meta);const settings=await RISSettings.read();return{url:view(id,!enabled(settings,meta))+'#page='+page};}
+ chrome.runtime.onMessage.addListener((m,s,reply)=>{
+  if(m?.target!=='ris-pdf-worker'||s.id!==chrome.runtime.id)return;
+  (async()=>{
+   if(m.type==='offscreen-ready'){if(s.url!==url('pdf-offscreen.html'))throw Error('Ungültiger PDF-Speicher.');await self.clients.claim();return{ready:true};}
+   if(m.type==='start'){
+    if(!s.tab||s.frameId!==0||!['http:','https:','file:'].includes(new URL(s.url).protocol))throw Error('Bitte eine geöffnete PDF verwenden.');const source=new URL(s.url),settings=await RISSettings.read(),meta={id:fresh(),tabId:s.tab.id,sourceURL:s.url,sourceHost:source.hostname,sourceOrigin:source.origin,documentId:s.documentId,created:Date.now(),page:1,filename:decodeURIComponent(source.pathname.split('/').at(-1)||'Dokument.pdf').replace(/[\r\n"\\/]/g,'_').slice(0,160),settings};if(!enabled(settings,meta))return{disabled:true};await set(meta);await ensure();return{id:meta.id,url:url('pdf-processor.html')+'?id='+meta.id};
+   }
+   if(m.type==='processor'){if(!valid(m.id)||s.url?.split('?')[0]!==url('pdf-processor.html'))throw Error('Ungültige PDF-Verarbeitung.');const meta=await get(m.id);if(!meta||s.tab?.id!==meta.tabId)throw Error('Die PDF wurde bereits geschlossen.');await self.clients.claim();return{settings:meta.settings,sourceOrigin:meta.sourceOrigin,localSourceURL:meta.sourceURL.startsWith('file:')?meta.sourceURL:undefined};}
+   if(m.type==='release'){const meta=valid(m.id)&&await get(m.id);if(meta&&meta.tabId===s.tab?.id)await release(m.id);return{released:true};}
+   if(m.type==='link')return route(m,s);
+   if(m.type==='view'){if(s.url?.split('?')[0]?.split('#')[0]!==url('pdf-view.html')||!valid(m.id))throw Error('Ungültige PDF-Ansicht.');const meta=await get(m.id);if(!meta||meta.tabId!==s.tab?.id)throw Error('Die temporäre PDF ist nicht mehr verfügbar. Bitte die ursprüngliche PDF erneut öffnen.');await self.clients.claim();return{filename:meta.filename};}
+   if(m.type==='progress'){if(s.url!==url('pdf-offscreen.html'))throw Error('Ungültige PDF-Verarbeitung.');return{received:true};}
+   throw Error('Unbekannter PDF-Aufruf.');
+  })().then(reply,e=>reply({error:e.message}));return true;
+ });
+ self.addEventListener('message',event=>{
+  const m=event.data,port=event.ports[0];if(m?.target!=='ris-pdf-worker'||m.type!=='store'||!port)return;
+  event.waitUntil((async()=>{if(!valid(m.id)||event.source?.url?.split('?')[0]!==url('pdf-processor.html'))throw Error('Ungültige PDF-Daten.');const meta=await get(m.id),settings=await RISSettings.read();if(!meta||!enabled(settings,meta)||drawKey(settings)!==drawKey(meta.settings))throw Error('Die Einstellungen wurden geändert. Bitte die PDF erneut öffnen.');if(!(m.original instanceof Blob)||!(m.blob instanceof Blob)||!m.blob.size||m.blob.size>256*1024*1024||!Array.isArray(m.references)||!Number.isInteger(m.pages)||m.pages<1||m.pages>5000)throw Error('Unvollständige PDF-Daten.');await cache({type:'put',id:m.id,original:m.original,blob:m.blob,references:m.references,settings:meta.settings,pages:m.pages});meta.pages=m.pages;meta.citations=m.citations;meta.processingMs=m.processingMs;await rule(meta);await set(meta);return{url:view(meta.id),pages:meta.pages,citations:meta.citations};})().then(v=>port.postMessage(v),e=>port.postMessage({error:e.message})).finally(()=>port.close()));
+ });
+ self.addEventListener('fetch',event=>{
+  const requested=new URL(event.request.url);if(requested.origin!==new URL(url('')).origin)return;
+  if(requested.pathname==='/pdf-follow.html'){event.respondWith(follow(requested,event).catch(e=>new Response(e.message,{status:410,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}})));return;}
+  if(requested.pathname!=='/native.pdf')return;
+  event.respondWith((async()=>{try{const id=requested.searchParams.get('id'),meta=valid(id)&&await get(id);if(!meta)throw Error('Die temporäre PDF ist nicht mehr verfügbar. Bitte die ursprüngliche PDF erneut öffnen.');const value=await cache({type:'get',id,original:requested.searchParams.get('original')==='1'});return new Response(value.blob,{headers:{'Content-Type':'application/pdf','Content-Disposition':"inline; filename*=UTF-8''"+encodeURIComponent(meta.filename),'Cache-Control':'no-store'}});}catch(e){return new Response(e.message,{status:410,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});}})());
+ });
+ async function doRefresh(tabId){const rows=await chrome.storage.session.get(),meta=Object.entries(rows).find(([k,v])=>k.startsWith(prefix)&&v.tabId===tabId&&v.pages)?.[1];if(!meta)return;const tab=await chrome.tabs.get(tabId).catch(()=>null);if(!tab)return;const ownContext=(await chrome.runtime.getContexts({contextTypes:['TAB'],tabIds:[tabId]})).find(c=>c.frameId===0&&isView(c.documentUrl,meta.id)),currentURL=tab.url||ownContext?.documentUrl;if(!isView(currentURL,meta.id))return;const settings=await RISSettings.read(),original=!enabled(settings,meta),expected=view(meta.id,original),current=new URL(currentURL);if(!original)await cache({type:'refresh',id:meta.id,settings},300000);if(JSON.stringify(settings)!==JSON.stringify(await RISSettings.read()))return;if(current.searchParams.has('original')!==original||!original&&drawKey(settings)!==drawKey(meta.settings)){meta.settings=settings;await set(meta);await chrome.tabs.update(tabId,{url:expected+(current.hash||'#page='+meta.page)});}}
+ function refresh(tabId){const work=(refreshQueues.get(tabId)||Promise.resolve()).catch(()=>{}).then(()=>doRefresh(tabId));refreshQueues.set(tabId,work);work.finally(()=>{if(refreshQueues.get(tabId)===work)refreshQueues.delete(tabId);}).catch(()=>{});return work;}
+ chrome.storage.onChanged.addListener((changes,area)=>{if(area!=='local'||!changes.settings)return;(async()=>{const settings=RISSettings.sanitize(changes.settings.newValue);if(['off','web'].includes(settings.mode)){for(const [key,meta]of Object.entries(await chrome.storage.session.get()))if(key.startsWith(prefix)&&meta.pages)await refresh(meta.tabId);}else{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(tab)await refresh(tab.id);}})().catch(()=>{});});
+ chrome.tabs.onActivated.addListener(({tabId})=>refresh(tabId).catch(()=>{}));
+ chrome.tabs.onRemoved.addListener(tabId=>{(async()=>{for(const [key,meta]of Object.entries(await chrome.storage.session.get()))if(key.startsWith(prefix)&&meta.tabId===tabId)await release(meta.id);})().catch(()=>{});});
+ chrome.tabs.onUpdated.addListener((tabId,change)=>{if(change.status==='complete')refresh(tabId).catch(()=>{});if(!change.url)return;(async()=>{for(const [key,meta]of Object.entries(await chrome.storage.session.get())){if(!key.startsWith(prefix)||meta.tabId!==tabId)continue;const current=new URL(change.url),source=new URL(meta.sourceURL);if(isView(current.href,meta.id)||current.href.startsWith(url('pdf-link.html')+'#')||current.searchParams.get('risPdfNav')===meta.id||current.origin===source.origin&&current.pathname===source.pathname&&current.search===source.search)continue;await release(meta.id);}})().catch(()=>{});});
+ globalThis.RISPdfSession={cache,native,view,release};
+})();

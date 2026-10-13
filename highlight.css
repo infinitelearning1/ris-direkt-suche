@@ -1,0 +1,21 @@
+a.ris-citation[data-ris-owner] {
+  color: inherit !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--ris-color, #c77700) !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: .16em !important;
+  border: 0 !important;
+  border-radius: 2px;
+}
+a.ris-citation[data-ris-owner][data-style="highlight"], a.ris-citation[data-ris-owner][data-style="both"] { background-color: var(--ris-background, #ffed75) !important; }
+a.ris-citation[data-ris-owner][data-style="highlight"] { text-decoration: none !important; }
+a.ris-citation[data-ris-owner]:hover { filter: brightness(.9); }
+a.ris-citation[data-ris-owner]:focus-visible { outline: 2px solid var(--ris-color, #c77700) !important; outline-offset: 2px; }
+.textLayer a.ris-citation[data-ris-owner][data-style="highlight"], .textLayer a.ris-citation[data-ris-owner][data-style="both"],
+.text-layer a.ris-citation[data-ris-owner][data-style="highlight"], .text-layer a.ris-citation[data-ris-owner][data-style="both"] {
+  background-color: color-mix(in srgb, var(--ris-background, #ffed75) 40%, transparent) !important;
+}
+[data-ris-pdf="true"] a.ris-citation[data-ris-owner][data-style="highlight"], [data-ris-pdf="true"] a.ris-citation[data-ris-owner][data-style="both"] {
+  background-color: color-mix(in srgb, var(--ris-background, #ffed75) 40%, transparent) !important;
+}
