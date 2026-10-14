@@ -18,7 +18,8 @@
     return{text,offsets};
   }
   const lawAt=text=>norms.readLaw(text,false,'law');
-  const fundstellenPattern=data.fundstellen.length?new RegExp(`(?<![\\p{L}\\d])(${[...data.fundstellen].sort((a,b)=>b.length-a.length).map(esc).join('|')})\\s+(\\d{1,5}(?:\\.\\d{3})?)(?:\\s*([,/.])\\s*(\\d{1,5}))?(?![\\p{L}\\d])`,'giu'):null;
+  // A period at a line end closes the citation: the next line's number (e.g. a footnote number) is not part of it.
+  const fundstellenPattern=data.fundstellen.length?new RegExp(`(?<![\\p{L}\\d])(${[...data.fundstellen].sort((a,b)=>b.length-a.length).map(esc).join('|')})\\s+(\\d{1,5}(?:\\.\\d{3})?)(?:\\s*([,/]|\\.(?!\\s*\\n))\\s*(\\d{1,5}))?(?![\\p{L}\\d])`,'giu'):null;
   function findMatches(input){
     const{text,offsets}=project(input),found=[];
     const push=(start,end,ref)=>{
