@@ -12,22 +12,29 @@
   const extras = ['VwGG', 'VfGG', 'EO', 'JN', 'AußStrG', 'BAO', 'VwGVG', 'KO', 'PSG', 'RAO', 'NO', 'GBG', 'WGG', 'KartG', 'UVG', 'StAG', 'JGG', 'GOG', 'GebAG', 'GGG', 'VBG', 'BDG', 'GehG', 'NAG', 'AsylG', 'FPG', 'KStG', 'UWG', 'PatG', 'MarkenSchG', 'MSchG', 'TKG', 'TKG 2003', 'TKG 2021', 'COVID-19-MG'];
   extras.push('HGB','AO','AußStrG 1854','UStG 1972','EStG 1972','VVG','VVG 1991');
   const articleLaws=new Set((data.articleLaws||[]).map(key));
-  const officialNames=new Set([...(data.registeredAbbreviations||[]),...(data.registeredTitles||[])].map(key));
-  const curatedNames=new Set([...Object.keys(aliases),...extras].map(key));
-  const legacyNames=(data.laws||[]).filter(n=>!officialNames.size||officialNames.has(key(n))||curatedNames.has(key(n)));
-  const names = [...legacyNames, ...(data.registeredAbbreviations || []), ...(data.registeredTitles || []), ...(data.articleLaws||[]), ...Object.keys(aliases),...Object.keys(articleAliases),...Object.keys(exactAliases), ...extras];
   const articleOnly=new Set([...articleLaws].filter(n=>!/^USTG(?: 1994)?$/.test(n)));
-  const registered = new Set(names.map(key));
-  const historicalYears={STVO:['1954','1960'],STPO:['1975'],KFG:['1967'],BDG:['1979'],ASYLG:['1991','1997','2005'],FPG:['2005'],NAG:['2005'],VVG:['1925','1950','1991'],AUSSSTRG:['1854','2003'],TKG:['1997','2003','2021']};
-  const acceptsYear = (base,year) => registered.has(key(base)+' '+year)||historicalYears[key(base)]?.includes(year)||aliases[key(base)]?.endsWith(' '+year);
-  const trie = Object.create(null);
-  for (const name of names) {
-    const normalized = key(name);
-    if (excluded.has(normalized) || !normalized) continue;
-    let node = trie;
-    for (const c of normalized) node = node[c] || (node[c] = Object.create(null));
-    node.value = normalized;
+  // This file runs in every frame of every page. The name bank is large, so it
+  // is built when the first statute name is actually read, not on load.
+  let bank;
+  function nameBank() {
+    if (bank) return bank;
+    const officialNames=new Set([...(data.registeredAbbreviations||[]),...(data.registeredTitles||[])].map(key));
+    const curatedNames=new Set([...Object.keys(aliases),...extras].map(key));
+    const legacyNames=(data.laws||[]).filter(n=>!officialNames.size||officialNames.has(key(n))||curatedNames.has(key(n)));
+    const names = [...legacyNames, ...(data.registeredAbbreviations || []), ...(data.registeredTitles || []), ...(data.articleLaws||[]), ...Object.keys(aliases),...Object.keys(articleAliases),...Object.keys(exactAliases), ...extras];
+    const registered = new Set(names.map(key));
+    const trie = Object.create(null);
+    for (const name of names) {
+      const normalized = key(name);
+      if (excluded.has(normalized) || !normalized) continue;
+      let node = trie;
+      for (const c of normalized) node = node[c] || (node[c] = Object.create(null));
+      node.value = normalized;
+    }
+    return bank = { registered, trie };
   }
+  const historicalYears={STVO:['1954','1960'],STPO:['1975'],KFG:['1967'],BDG:['1979'],ASYLG:['1991','1997','2005'],FPG:['2005'],NAG:['2005'],VVG:['1925','1950','1991'],AUSSSTRG:['1854','2003'],TKG:['1997','2003','2021']};
+  const acceptsYear = (base,year) => nameBank().registered.has(key(base)+' '+year)||historicalYears[key(base)]?.includes(year)||aliases[key(base)]?.endsWith(' '+year);
   const fullNames = [
     [/^allgemein(?:es|en|e|er)?\s+bürgerlich(?:es|en|e|er)?\s+gesetzbuch(?:s|es)?/iu, 'ABGB'],
     [/^bundes[- ]verfassungsgesetz(?:es|s)?/iu, 'B-VG'],
@@ -58,7 +65,7 @@
       if(marker==='§'&&articleOnly.has(key(law)))return null;
       return { law, length: leading + m[0].length + (explicit?.[0].length || 0), implicitYear: false };
     }
-    let node = trie, pos = 0, best;
+    let node = nameBank().trie, pos = 0, best;
     while (pos < tail.length) {
       let c = tail[pos].toUpperCase().replace(/[‐‑–—−]/g, '-');
       if (/\s/u.test(c)) { c = ' '; pos = spaces(tail, pos); } else pos++;

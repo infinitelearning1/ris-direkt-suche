@@ -5,7 +5,9 @@
   const pdfLayers = '.textLayer,.text-layer,[data-ris-pdf="true"]';
   const exclude = 'a,sup,sub,[role="doc-noteref"],button,script,style,noscript,textarea,input,select,option,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="button"],[role="link"],[role="menuitem"],[role="tab"],[role="option"],svg,canvas,[data-ris-ignore],[hidden],[inert],[aria-hidden="true"]';
   const blocks = 'p,li,td,th,h1,h2,h3,h4,h5,h6,pre,div,section,article,dt,dd,blockquote,header,footer,main,aside,nav,figcaption,caption,address,summary,legend,body';
-  let settings, timer, active = false, revision = 0, rendering = false, urgentPending = false;
+  let settings, timer, active = false, revision = 0, rendering = false, urgentPending = false, touched = false;
+  // Every supported citation contains a digit; most text never reaches the parser.
+  const find=text=>/\d/.test(text)?RIS.findMatches(text):[];
   const pending = new Set();
   const owned = new WeakSet(), references = new WeakMap(), states = new WeakMap(), hiddenRoots = new Set();
   const sourceBindings=new WeakMap(),anchorBindings=new WeakMap();
@@ -118,7 +120,7 @@
     }
   }
   function supportedLinks(text){
-    const matches=RIS.findMatches(text);
+    const matches=find(text);
     if(!matches.length||matches.some(m=>!RISSettings.accepts(m.ref,settings)))return false;
     let previous=0;
     for(const m of matches){if(!/^(?:[\s,;()[\]–—-]|und|oder|i\.?\s*v\.?\s*m\.?|in\s+Verbindung\s+mit)*$/i.test(text.slice(previous,m.start)))return false;previous=m.end;}
@@ -137,7 +139,7 @@
     if(!onRIS)return;
     for(const visible of root.querySelectorAll('.embeddedContent .contentBlock span[aria-hidden="true"]')){
       const reader=visible.nextElementSibling;
-      if(!reader?.matches('span.sr-only')||!RIS.findMatches(visible.textContent).length||!allowed(visible))continue;
+      if(!reader?.matches('span.sr-only')||!find(visible.textContent).length||!allowed(visible))continue;
       accessibilityBindings.set(visible,{node:reader,original:reader.getAttribute('aria-hidden')});
       visible.removeAttribute('aria-hidden');reader.setAttribute('aria-hidden','true');
     }
@@ -169,6 +171,7 @@
   }
   async function paint(root) {
     if (!root.isConnected) return;
+    touched=true;
     const token=revision;
     let batchStarted=performance.now();
     function yieldIfNeeded(){
@@ -189,8 +192,21 @@
       if (!block) continue;
       if (!groups.has(block)) groups.set(block, []);
       if (lastBlock && lastBlock !== block) groups.get(lastBlock).push(null);
-      groups.get(block).push(eligible(node) ? node : null);
+      groups.get(block).push(node);
       lastBlock = block;
+      const yieldWalk=yieldIfNeeded();
+      if(yieldWalk){
+        await yieldWalk;if(token!==revision||!root.isConnected)return;
+        // The page removed the walker's position meanwhile: start this root again.
+        if(!root.contains(node)){enqueue(root);return;}
+      }
+    }
+    // Style and layout are queried only for blocks that can contain a citation.
+    for (const [block, nodes] of groups) {
+      if(token!==revision)return;
+      if (!nodes.some(n => n && /\d/.test(n.nodeValue))) { groups.delete(block); continue; }
+      for (let i = 0; i < nodes.length; i++) if (nodes[i] && !eligible(nodes[i])) nodes[i] = null;
+      const yieldBlock=yieldIfNeeded();if(yieldBlock)await yieldBlock;
     }
     for (let nodes of groups.values()) {
       if(token!==revision)return;
@@ -211,7 +227,7 @@
         text += n.nodeValue;
         previous = n;
       }
-      const matches = RIS.findMatches(text).filter(m => RISSettings.accepts(m.ref,settings));
+      const matches = find(text).filter(m => RISSettings.accepts(m.ref,settings));
       for (let i = matches.length - 1; i >= 0; i--) {
         if(token!==revision)return;
         const match = matches[i];
@@ -293,7 +309,7 @@
     timer = null;
     pending.clear();
     urgentPending=false;
-    try { if (active) await paint(document.body); else{const selection=selected(document.body);unwrap(document.body);restoreExisting(document.body);restoreAccessibility(document.body);restoreSelection(document.body,selection);} }
+    try { if (active) await paint(document.body); else if(touched){const selection=selected(document.body);unwrap(document.body);restoreExisting(document.body);restoreAccessibility(document.body);restoreSelection(document.body,selection);} }
     finally { rendering=false;connect();if(pending.size&&!timer)timer=setTimeout(flush,80);document.dispatchEvent(new CustomEvent('ris-settings-applied'));document.dispatchEvent(new CustomEvent('ris-markings-applied',{detail:{pending:pending.size>0}})); }
   }
   chrome.storage.onChanged.addListener((changes, area) => {

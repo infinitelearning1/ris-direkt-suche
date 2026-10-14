@@ -1,4 +1,4 @@
-# RIS-Direkt-Suche 1.13
+# RIS-Direkt-Suche 1.14
 
 Normen und Entscheidungen mit einem Klick aus dem Text im RIS öffnen oder mit `ris` über die Browserleiste suchen. Für Google Chrome und Microsoft Edge.
 
