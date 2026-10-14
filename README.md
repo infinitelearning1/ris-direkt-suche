@@ -46,7 +46,7 @@ Die Erkennung läuft lokal. Beim Markieren erfolgen keine RIS-Vorabfragen; erst 
 
 ## Was zu beachten ist
 
-Die Erweiterung konzentriert sich auf österreichisches Bundesrecht sowie OGH, VwGH und VfGH. Landesrecht ist derzeit nicht enthalten. Artikel werden nur bei ausgewählten österreichischen Rechtsvorschriften erkannt. Eine erkannte Zitierung garantiert nicht, dass die konkrete Normnummer oder Fundstelle im RIS vorhanden ist.
+Die Erweiterung konzentriert sich auf österreichisches Bundesrecht sowie OGH, VwGH und VfGH. Landesrecht ist derzeit nicht enthalten. Artikel werden nur bei ausgewählten österreichischen Rechtsvorschriften erkannt. Eine Unterstreichung heißt nur, dass die Erweiterung im Text etwas erkannt hat, das wie eine Norm, Entscheidung oder Fundstelle aussieht. Ob es dazu im RIS tatsächlich einen Paragraphen oder eine Entscheidung gibt, prüft sie dabei nicht; das zeigt sich erst beim Klick.
 
 Gleiche Gesetzeskürzel in verschiedenen Ländern lassen sich ohne Länderangabe nicht zuverlässig unterscheiden. Bei `§ 12 VVG` wird von österreichischem Recht ausgegangen. Ausdrückliche fremde Kürzel wie `dVVG`, `BGB` und `InsO` werden ausgespart.
 
