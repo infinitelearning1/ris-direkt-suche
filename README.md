@@ -26,12 +26,12 @@ Die Erweiterung erscheint im Erweiterungsmenü unter **RIS**. Du musst ihr Symbo
 | `ris 25a IO` | Aktuelle Fassung einer Norm |
 | `ris 25a IO @2007` | Fassungen, die innerhalb des Kalenderjahres galten |
 | `ris 25a IO @13.5.2007` | Historische Fassung an einem genauen Tag |
-| `ris 8Ob216/16s` | OGH-Entscheidung, auch mit Leerzeichen |
-| `ris vwgh Ra 2024/03/0012` | VwGH-Entscheidung |
-| `ris vfgh G 12/2024` | VfGH-Entscheidung |
+| `ris 2 Ob 84/01v` | OGH-Entscheidung, auch ohne Leerzeichen als `2Ob84/01v` |
+| `ris vwgh Ra 2024/03/0012` | VwGH-Entscheidung vom 25.6.2025 |
+| `ris vfgh G 139/2019` | VfGH-Entscheidung vom 11.12.2020 |
 | `ris ABGB` | Ganzes Gesetz, auch mit historischem Zusatz |
 | `ris RS0033002` | RIS-Justiz-Rechtssatz |
-| `ris SZ 74/90` | Entscheidungssammlung |
+| `ris SZ 2020/117` | Entscheidungssammlung, führt zu OGH 2 Ob 142/20a |
 | `ris ZFR 2023/58` | Zeitschriftenfundstelle |
 
 Bei einem Jahr öffnet eine einzige erfasste Fassung direkt. Mehrere Fassungen bleiben zur Auswahl. Bei mehrdeutigen älteren Geschäftszahlen hilft das Gerichtskürzel.
