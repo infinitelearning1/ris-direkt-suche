@@ -39,7 +39,7 @@
     [/^allgemein(?:es|en|e|er)?\s+bürgerlich(?:es|en|e|er)?\s+gesetzbuch(?:s|es)?/iu, 'ABGB'],
     [/^bundes[- ]verfassungsgesetz(?:es|s)?/iu, 'B-VG'],
     [/^europäisch(?:e|en|er)?\s+menschenrechtskonvention/iu, 'EMRK'],
-    [/^insolvenzordnung/iu, 'IO'], [/^konkursordnung/iu, 'KO'],
+    [/^ausgleichsordnung/iu, 'AO'], [/^insolvenzordnung/iu, 'IO'], [/^konkursordnung/iu, 'KO'],
     [/^zivilproze(?:ss|ß)ordnung/iu, 'ZPO'], [/^strafproze(?:ss|ß)ordnung/iu, 'StPO'],
     [/^strafgesetzbuch(?:s|es)?/iu, 'StGB'], [/^konsumentenschutzgesetz(?:es|s)?/iu, 'KSchG'],
     [/^mietrechtsgesetz(?:es|s)?/iu, 'MRG'], [/^versicherungsvertragsgesetz(?:es|s)?/iu, 'VersVG'],

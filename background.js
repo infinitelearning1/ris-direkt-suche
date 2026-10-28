@@ -1,5 +1,5 @@
 'use strict';
-importScripts('data.js', 'norms.js', 'collections.js', 'query.js', 'settings.js', 'pdf-session.js');
+importScripts('data.js', 'norms.js', 'collections.js', 'query.js', 'settings.js', 'pdf-history.js', 'pdf-session.js');
 
 const MENU_ID = 'ris-direct-search';
 let settingsQueue=Promise.resolve();
@@ -34,7 +34,15 @@ chrome.runtime.onStartup.addListener(ensureMenu);
 async function search(text, disposition = 'newForegroundTab', tabId, allowWebSearch = true) {
   let url;
   try {
-    const ref=RIS.parseInput(text);
+    let ref=RIS.parseInput(text);
+    if(Number.isInteger(tabId)&&['norm','law'].includes(ref.type)&&!ref.date&&!ref.year){
+      const settings=await RISSettings.read();
+      if(settings.pdfHistoricalYear){
+        const meta=Object.entries(await chrome.storage.session.get()).find(([key,value])=>key.startsWith('risPdf:')&&value.tabId===tabId)?.[1];
+        if(meta)ref=RISPdfHistory.apply(ref,settings,meta.publication);
+        else {const tab=await chrome.tabs.get(tabId);if(/\.pdf(?:[?#]|$)/i.test(tab.url||''))ref=RISPdfHistory.apply(ref,settings,RISPdfHistory.detect({title:tab.title,filename:RISPdfHistory.filename(tab.url)}));}
+      }
+    }
     if(ref.type==='search'&&!allowWebSearch)throw new Error('In der Auswahl wurde kein unterstütztes RIS-Zitat erkannt. Bitte Geschäftszahl oder Norm mit Gesetz angeben.');
     if(ref.year){
       const page=new URL(chrome.runtime.getURL('year.html'));
@@ -43,15 +51,20 @@ async function search(text, disposition = 'newForegroundTab', tabId, allowWebSea
   }
   catch (error) { url = chrome.runtime.getURL('error.html') + '?message=' + encodeURIComponent(error.message) + '&query=' + encodeURIComponent(text); }
   if (disposition === 'currentTab') {
-    if (Number.isInteger(tabId)) await chrome.tabs.update(tabId, {url});
-    else await chrome.tabs.update({url});
+    // Target the tab of the window the user typed in. If that tab cannot be
+    // changed, open a new tab instead of silently doing nothing.
+    try {
+      if (!Number.isInteger(tabId)) tabId = (await chrome.tabs.query({active: true, lastFocusedWindow: true}))[0]?.id;
+      if (Number.isInteger(tabId)) await chrome.tabs.update(tabId, {url});
+      else await chrome.tabs.create({url, active: true});
+    } catch { await chrome.tabs.create({url, active: true}); }
   } else await chrome.tabs.create({url, active: disposition !== 'newBackgroundTab'});
 }
 chrome.omnibox.onInputChanged.addListener(text => {
   let description;
   try {
     const ref = RIS.parseInput(text);
-    description = ref.type === 'search' ? 'Google-Suche: ' + ref.query : 'RIS: ' + RIS.label(ref) + (ref.type === 'norm' && !ref.date && !ref.year ? ' (heutige Fassung)' : '');
+    description = ref.type === 'search' ? 'Google-Suche: ' + ref.query : 'RIS: ' + RIS.label(ref) + (ref.type === 'norm' && !/^(AO|Ausgleichsordnung|KO|Konkursordnung)$/i.test(ref.law) && !ref.date && !ref.year ? ' (heutige Fassung)' : '');
   } catch (error) { description = error.message; }
   chrome.omnibox.setDefaultSuggestion({description: description.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')});
 });

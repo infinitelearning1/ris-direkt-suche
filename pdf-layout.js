@@ -5,7 +5,8 @@
     if(items.length<8)return items;
     const nonempty=items.filter(i=>i.rect.width>0&&i.rect.height>0);
     if(!nonempty.length)return items;
-    const min=Math.min(...nonempty.map(i=>i.rect.left)),max=Math.max(...nonempty.map(i=>i.rect.right)),width=max-min;
+    // A loop instead of Math.min(...list): spreading very long lists can exceed the call stack.
+    let min=Infinity,max=-Infinity;for(const i of nonempty){if(i.rect.left<min)min=i.rect.left;if(i.rect.right>max)max=i.rect.right;}const width=max-min;
     const rows=[];
     for(const item of [...nonempty].sort((a,b)=>a.rect.top-b.rect.top||a.rect.left-b.rect.left)){
       let row=rows.at(-1);if(!row||Math.abs(row.y-item.rect.top)>Math.max(3,item.rect.height*.35)){row={y:item.rect.top,items:[]};rows.push(row);}row.items.push(item);

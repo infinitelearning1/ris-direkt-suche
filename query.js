@@ -115,7 +115,7 @@
     if((date||year)&&ref.lawImplicitYear)ref={...ref,law:ref.law.replace(/\s+\d{4}$/, '')};
     return{...ref,date,year};
   }
-  function label(ref){return['norm','law'].includes(ref.type)?[ref.marker,ref.number,ref.details,ref.law,ref.date?'@'+ref.date:ref.year?'@'+ref.year+' (Kalenderjahr)':''].filter(Boolean).join(' '):ref.display||ref.query;}
+  function label(ref){return['norm','law'].includes(ref.type)?[ref.marker,ref.number,ref.details,ref.law,ref.date?'@'+ref.date:ref.year?'@'+ref.year+' (Kalenderjahr)':/^(AO|Ausgleichsordnung)$/i.test(ref.law)?'(letzte Fassung: 30.06.2010)':/^(KO|Konkursordnung)$/i.test(ref.law)?'(letzte KO-Fassung: 30.06.2010)':''].filter(Boolean).join(' '):ref.display||ref.query;}
   function buildUrl(ref,today=localDate()){
     if(ref.year)throw new Error('Eine Jahressuche benötigt die Jahresübersicht der Erweiterung.');
     if(ref.type==='search')return'https://www.google.com/search?q='+encodeURIComponent(ref.query);
@@ -124,12 +124,16 @@
     if(['norm','law'].includes(ref.type)){
       // RIS can interpret dotted dates as month/day. ISO avoids an ambiguous
       // 05.06 -> 06.05 swap while the input and label remain German.
-      const date=ref.date||today;
+      const retired=/^(AO|Ausgleichsordnung)$/i.test(ref.law);
+      const konkurs=/^(KO|Konkursordnung)$/i.test(ref.law);
+      // RIS stores historical KO documents under IO. Preserve that lookup
+      // identity, but an undated KO citation must select the pre-IO text.
+      const date=ref.date||(retired||konkurs?'30.06.2010':today);
       const urlDate=/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(date)?date.split('.').reverse().map((s,i)=>i?s.padStart(2,'0'):s).join('-'):date;
-      const law=/^HGB$/i.test(ref.law)?'UGB':/^KO$/i.test(ref.law)?'IO':ref.law;
+      const law=retired?'Ausgleichsordnung':/^HGB$/i.test(ref.law)?'UGB':konkurs?'IO':ref.law;
       const numbers=ref.type==='norm'?ref.number.match(/\d+[a-z]?/gi):[];
       if(numbers.length===1&&/^\d+$/.test(numbers[0])&&/^f\.?$/i.test(ref.details||''))numbers.push(String(Number(numbers[0])+1));
-      const id=ref.marker==='Art'?data.directArticleIds?.[key(law)]:(ref.type==='norm'?data.directParagraphIds?.[key(law)]:undefined)||data.directLawIds?.[key(law)];
+      const id=retired?'10001827':konkurs?'10001736':ref.marker==='Art'?data.directArticleIds?.[key(law)]:(ref.type==='norm'?data.directParagraphIds?.[key(law)]:undefined)||data.directLawIds?.[key(law)];
       const requested=ref.date?.split('.').reverse().map((s,i)=>i?s.padStart(2,'0'):s).join('-');
       const provenDate=!ref.date||!ref.lawImplicitYear&&data.directLawStarts?.[id]&&requested>=data.directLawStarts[id];
       if(id&&/^\d{8}$/.test(id)&&provenDate&&(ref.type==='law'||numbers.length===1)){
@@ -138,7 +142,7 @@
         if(ref.type==='norm')q.set(ref.marker==='Art'?'Artikel':'Paragraf',numbers[0]);
         return direct.href;
       }
-      p.set('Abfrage','Bundesnormen');p.set('Titel',law);p.set('FassungVom',urlDate);
+      p.set('Abfrage','Bundesnormen');if(retired||konkurs)p.set('Gesetzesnummer',id);else p.set('Titel',law);p.set('FassungVom',urlDate);
       if(ref.type==='law'){p.set('VonParagraf','0');p.set('BisParagraf','0');p.set('risMode','law');}
       else{
         const part=ref.marker==='Art'?'Artikel':'Paragraf';

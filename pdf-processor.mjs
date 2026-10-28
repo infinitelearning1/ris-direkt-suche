@@ -4,7 +4,7 @@ function send(value){parent.postMessage({target:'ris-pdf-entry',id,...value},met
 async function store(value){const c=new MessageChannel();return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{c.port1.close();reject(Error('Die PDF konnte nicht bereitgestellt werden.'));},15000);c.port1.onmessage=e=>{clearTimeout(timer);c.port1.close();e.data.error?reject(Error(e.data.error)):resolve(e.data);};navigator.serviceWorker.controller.postMessage({target:'ris-pdf-worker',type:'store',id,...value},[c.port2]);});}
 async function process(original){
  if(running)return;running=true;
- try{const result=await annotatePDF(original,id,meta.settings,{signal:abort.signal,onProgress:progress=>send({type:'progress',...progress})});if(!result.citations){send({type:'empty',textPages:result.textPages});return;}const reply=await store({original,...result});send({type:'ready',...reply,processingMs:result.processingMs});}
+ try{const result=await annotatePDF(original,id,meta.settings,{signal:abort.signal,documentContext:meta.documentContext,onProgress:progress=>send({type:'progress',...progress})});if(!result.citations){send({type:'empty',textPages:result.textPages});return;}const reply=await store({original,...result});send({type:'ready',...reply,processingMs:result.processingMs});}
  catch(e){send({type:'error',error:e.name==='AbortError'?'Verarbeitung abgebrochen.':e.message});}
 }
 window.addEventListener('message',async event=>{

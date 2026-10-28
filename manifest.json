@@ -3,7 +3,7 @@
   "minimum_chrome_version": "119",
   "name": "RIS",
   "short_name": "RIS",
-  "version": "1.14",
+  "version": "1.15",
   "description": "RIS-Suche für OGH, VwGH, VfGH und historische Normen. Einstellbare Zitatmarkierung auf Webseiten und in geöffneten PDFs mit Textebene.",
   "permissions": [
     "contextMenus",

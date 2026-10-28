@@ -12,7 +12,7 @@
   function queries(ref){
     validate(ref);
     const url=new URL(endpoint),p=url.searchParams;
-    p.set('Applikation','BrKons');p.set('Titel',/^HGB$/i.test(ref.law)?'UGB':/^KO$/i.test(ref.law)?'IO':ref.law);p.set('DokumenteProSeite','OneHundred');
+    p.set('Applikation','BrKons');p.set('Titel',/^(AO|Ausgleichsordnung)$/i.test(ref.law)?'Ausgleichsordnung':/^HGB$/i.test(ref.law)?'UGB':/^KO$/i.test(ref.law)?'IO':ref.law);p.set('DokumenteProSeite','OneHundred');
     if(ref.type==='norm'){
       const numbers=ref.number.match(/\d+[a-z]?/gi);
       p.set('Abschnitt.Von',numbers[0]);p.set('Abschnitt.Bis',numbers.at(-1));p.set('Abschnitt.Typ',ref.marker==='Art'?'Artikel':'Paragraph');

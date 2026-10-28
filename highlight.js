@@ -48,10 +48,29 @@
         continue;
       }
       if(mutation.type==='attributes'&&['class','style'].includes(mutation.attributeName)){
-        const next=state(element),previous=states.get(element);states.set(element,next);
-        if(previous===next){for(const hidden of hiddenRoots){if(!hidden.isConnected){hiddenRoots.delete(hidden);continue;}if(element.contains(hidden)&&hidden.getClientRects().length)enqueue(group(hidden));}continue;}
+        styleChecks.add(element);
+        if(!styleTimer)styleTimer=setTimeout(checkStyles,100);
+        continue;
       }
       enqueue(group(element) || document.body);
+    }
+  }
+  // Animated pages change class/style on every frame. Visibility is checked
+  // at most every 100 ms per element, and hidden content once per check.
+  const styleChecks=new Set();let styleTimer=null;
+  function checkStyles(){
+    styleTimer=null;
+    if(!active){styleChecks.clear();return;}
+    const revealed=[];
+    for(const element of styleChecks){
+      if(!element.isConnected)continue;
+      const next=state(element),previous=states.get(element);states.set(element,next);
+      if(previous===next)revealed.push(element);else enqueue(group(element)||document.body);
+    }
+    styleChecks.clear();
+    if(revealed.length)for(const hidden of hiddenRoots){
+      if(!hidden.isConnected){hiddenRoots.delete(hidden);continue;}
+      for(const element of revealed)if(element.contains(hidden)){if(hidden.getClientRects().length)enqueue(group(hidden));break;}
     }
   }
   function hasOwnedMark(node){return node.nodeType===Node.ELEMENT_NODE&&(owned.has(node)||[...node.querySelectorAll('a.ris-citation')].some(a=>owned.has(a)));}
@@ -308,6 +327,7 @@
     if (timer) clearTimeout(timer);
     timer = null;
     pending.clear();
+    clearTimeout(styleTimer);styleTimer=null;styleChecks.clear();
     urgentPending=false;
     try { if (active) await paint(document.body); else if(touched){const selection=selected(document.body);unwrap(document.body);restoreExisting(document.body);restoreAccessibility(document.body);restoreSelection(document.body,selection);} }
     finally { rendering=false;connect();if(pending.size&&!timer)timer=setTimeout(flush,80);document.dispatchEvent(new CustomEvent('ris-settings-applied'));document.dispatchEvent(new CustomEvent('ris-markings-applied',{detail:{pending:pending.size>0}})); }
@@ -329,8 +349,11 @@
     }
   },true);
   document.addEventListener('keydown',()=>selectionInput++,true);
+  // Resizing fires many events per second; check hidden content once it settles.
+  let revealTimer;
   for(const name of ['resize','hashchange'])window.addEventListener(name,()=>{
-    for(const hidden of hiddenRoots){if(!hidden.isConnected){hiddenRoots.delete(hidden);continue;}if(hidden.getClientRects().length)enqueue(group(hidden));}
+    clearTimeout(revealTimer);
+    revealTimer=setTimeout(()=>{for(const hidden of hiddenRoots){if(!hidden.isConnected){hiddenRoots.delete(hidden);continue;}if(hidden.getClientRects().length)enqueue(group(hidden));}},120);
   });
   configure();
 })();

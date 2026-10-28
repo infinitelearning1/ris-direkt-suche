@@ -1,8 +1,8 @@
 (function (root) {
   'use strict';
-  const defaults = { mode: 'both', style: 'underline', normColor: '#c77700', caseColor: '#1b69c9',
+  const defaults = { mode: 'off', style: 'underline', normColor: '#c77700', caseColor: '#1b69c9',
     rsColor: '#8a46aa', fundstelleColor: '#16806a', highlightColor: '#ffed75', openIn: 'newTab',
-    enabledCourts: ['OGH', 'VwGH', 'VfGH'], excludedSites: [], existingLinks: true, markFundstellen: false, markCollections: true };
+    enabledCourts: ['OGH', 'VwGH', 'VfGH'], excludedSites: [], existingLinks: true, markFundstellen: false, markCollections: true, pdfHistoricalYear: false };
   function host(value) {
     if (typeof value !== 'string') return null;
     const text = value.trim().replace(/^\*\./, '');
@@ -29,6 +29,7 @@
     s.existingLinks = typeof value.existingLinks === 'boolean' ? value.existingLinks : defaults.existingLinks;
     s.markFundstellen = typeof value.markFundstellen === 'boolean' ? value.markFundstellen : defaults.markFundstellen;
     s.markCollections = typeof value.markCollections === 'boolean' ? value.markCollections : defaults.markCollections;
+    s.pdfHistoricalYear = typeof value.pdfHistoricalYear === 'boolean' ? value.pdfHistoricalYear : defaults.pdfHistoricalYear;
     return s;
   }
   async function read() {

@@ -7,6 +7,7 @@ function values() {
   for (const name of ['mode', 'style', 'normColor', 'caseColor', 'rsColor', 'fundstelleColor', 'highlightColor'])
     settings[name] = form.elements.namedItem(name).value;
   settings.enabledCourts = [...form.querySelectorAll('[name=court]:checked')].map(x => x.value);
+  settings.pdfHistoricalYear = form.elements.namedItem('pdfHistoricalYear').checked;
   settings.existingLinks = form.elements.namedItem('existingLinks').checked;
   settings.markFundstellen = form.elements.namedItem('markFundstellen').checked;
   settings.markCollections = form.elements.namedItem('markCollections').checked;
@@ -26,6 +27,7 @@ function populate(settings) {
   for (const name of ['mode', 'style', 'normColor', 'caseColor', 'rsColor', 'fundstelleColor', 'highlightColor'])
     form.elements.namedItem(name).value = settings[name];
   for (const box of form.querySelectorAll('[name=court]')) box.checked = settings.enabledCourts.includes(box.value);
+  form.elements.namedItem('pdfHistoricalYear').checked = settings.pdfHistoricalYear;
   form.elements.namedItem('existingLinks').checked = settings.existingLinks;
   form.elements.namedItem('markFundstellen').checked = settings.markFundstellen;
   form.elements.namedItem('markCollections').checked = settings.markCollections;

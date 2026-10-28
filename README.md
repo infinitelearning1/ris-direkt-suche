@@ -1,4 +1,4 @@
-# RIS-Direkt-Suche 1.14
+# RIS-Direkt-Suche 1.15
 
 Normen und Entscheidungen mit einem Klick aus dem Text im RIS öffnen oder mit `ris` über die Browserleiste suchen. Für Google Chrome und Microsoft Edge.
 
@@ -12,7 +12,7 @@ Normen und Entscheidungen mit einem Klick aus dem Text im RIS öffnen oder mit `
 3. In Chrome `chrome://extensions`, in Edge `edge://extensions` öffnen.
 4. Den **Entwicklermodus** einschalten und **Entpackte Erweiterung laden** wählen.
 5. Den entpackten Ordner auswählen, in dem `manifest.json` liegt.
-6. Bereits geöffnete Webseiten neu laden. Erkannte Zitate werden automatisch markiert.
+6. Die Suche über die Browserleiste funktioniert sofort. Die Markierung von Zitaten auf Webseiten und in PDFs ist anfangs ausgeschaltet und lässt sich über das Erweiterungsmenü unter „RIS“ einschalten. Bereits geöffnete Seiten danach neu laden.
 7. Optional für PDFs vom Computer: Unter **Details** der Erweiterung **Zugriff auf Datei-URLs zulassen** einschalten. Für PDFs aus dem Internet ist das nicht nötig.
 
 Die Erweiterung erscheint im Erweiterungsmenü unter **RIS**. Du musst ihr Symbol nicht anheften. Dort erreichst du auch die Einstellungen.
@@ -29,6 +29,7 @@ Die Erweiterung erscheint im Erweiterungsmenü unter **RIS**. Du musst ihr Symbo
 | `ris 2 Ob 84/01v` | OGH-Entscheidung, auch ohne Leerzeichen als `2Ob84/01v` |
 | `ris vwgh Ra 2024/03/0012` | VwGH-Entscheidung vom 25.6.2025 |
 | `ris vfgh G 139/2019` | VfGH-Entscheidung vom 11.12.2020 |
+| `ris 21 KO` | Letzte Fassung der Konkursordnung vom 30.06.2010; ebenso bei der AO |
 | `ris ABGB` | Ganzes Gesetz, auch mit historischem Zusatz |
 | `ris RS0033002` | RIS-Justiz-Rechtssatz |
 | `ris SZ 2020/117` | Entscheidungssammlung, führt zu OGH 2 Ob 142/20a |
@@ -38,9 +39,11 @@ Bei einem Jahr öffnet eine einzige erfasste Fassung direkt. Mehrere Fassungen b
 
 ## Markierungen und Einstellungen
 
-Erkannte Normen, Geschäftszahlen, Rechtssätze und unterstützte Entscheidungssammlungen werden automatisch verlinkt. Ein Klick öffnet das RIS in einem neuen fokussierten Tab. Normlisten erhalten getrennte Ziele. Vollständig erkannte Zitatlinks führen standardmäßig ebenfalls ins RIS; diese Option lässt sich ausschalten.
+Ist die Markierung eingeschaltet, werden erkannte Normen, Geschäftszahlen, Rechtssätze und unterstützte Entscheidungssammlungen verlinkt. Ein Klick öffnet die Fundstelle in einem neuen Tab. Normlisten erhalten getrennte Ziele. Vollständig erkannte Zitatlinks führen standardmäßig ebenfalls ins RIS; diese Option lässt sich ausschalten.
 
-Du kannst zwischen Webseiten und PDFs, nur Webseiten, nur PDFs und ganz aus wählen. Unterstreichung, Hervorhebung oder beides sowie die Farben lassen sich einstellen. Zeitschriftenfundstellen sind standardmäßig aus, unterstützte Entscheidungssammlungen an. Ihre manuelle Suche über die Browserleiste bleibt immer möglich.
+Du kannst zwischen Webseiten und PDFs, nur Webseiten, nur PDFs und ganz aus wählen; voreingestellt ist ganz aus. Unterstreichung, Hervorhebung oder beides sowie die Farben lassen sich einstellen. Zeitschriftenfundstellen sind standardmäßig aus, unterstützte Entscheidungssammlungen an. Ihre manuelle Suche über die Browserleiste bleibt immer möglich.
+
+Optional sucht ein Klick in einer PDF die Normfassungen, die im Erscheinungsjahr des Beitrags galten. Das Jahr wird aus Dateiname, Tabtitel oder PDF-Titel erkannt; bei mehreren Fassungen erscheint eine Auswahl. Die Option ist anfangs ausgeschaltet. Das Erscheinungsjahr ist nur ein Suchhinweis; welcher Rechtsstand im Beitrag behandelt wird, prüft die Erweiterung nicht.
 
 Die Erkennung läuft lokal. Beim Markieren erfolgen keine RIS-Vorabfragen; erst ein Klick oder eine Suche ruft RIS auf.
 
